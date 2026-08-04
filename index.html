@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Literacy Lab</title>
+<style>
+  :root{color-scheme:light; --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
+        --muted:#898781; --border:rgba(11,11,11,.1); --p1:#2a78d6;}
+  @media (prefers-color-scheme: dark){
+    :root{color-scheme:dark; --surface:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink2:#c3c2b7;
+          --border:rgba(255,255,255,.1); --p1:#3987e5;}
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);
+       color:var(--ink);line-height:1.55;padding:48px 18px;}
+  .wrap{max-width:640px;margin:0 auto;}
+  .kicker{font-size:14.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  h1{font-size:32px;margin:8px 0 10px;}
+  p.sub{color:var(--ink2);font-size:17px;margin-bottom:30px;}
+  a.week{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);
+         border-radius:14px;padding:18px 20px;margin-bottom:14px;text-decoration:none;color:var(--ink);}
+  a.week:hover{border-color:var(--p1);}
+  .num{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--surface);
+       display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:none;}
+  .t{font-weight:700;font-size:18px;}
+  .d{color:var(--ink2);font-size:15px;}
+  .soon{opacity:.5;pointer-events:none;}
+  .foot{color:var(--muted);font-size:14px;margin-top:34px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Family Data Literacy Lab</div>
+  <h1>Weekly Labs</h1>
+  <p class="sub">One real-world question a week. Statistics, math, physics, and code — with your own data.</p>
+  <a class="week" href="week1/">
+    <span class="num">1</span>
+    <span><span class="t">Reaction Lab</span><br>
+    <span class="d">Can one average describe your reaction speed?</span></span>
+  </a>
+  <a class="week soon" href="#">
+    <span class="num">2</span>
+    <span><span class="t">Can We See Music?</span><br>
+    <span class="d">Coming soon — waveforms, periods, and f = 1/T</span></span>
+  </a>
+  <div class="foot">Made with Dad · new lab every week</div>
+</div>
+</body>
+</html>

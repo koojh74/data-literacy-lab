@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 1 · Reaction Lab — Data Literacy Lab</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --ink-1:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --p1:#2a78d6; --p2:#eb6834;
+    --go:#0ca30c; --stop:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme: dark;
+      --surface-1:#1a1a19; --page:#0d0d0d;
+      --ink-1:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+      --p1:#3987e5; --p2:#d95926;
+    }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--page); color:var(--ink-1);
+    line-height:1.5; padding:24px 16px 80px;
+  }
+  .wrap{max-width:880px; margin:0 auto;}
+  header{margin-bottom:28px;}
+  .kicker{font-size:14.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600;}
+  h1{font-size:30px; line-height:1.2; margin-top:6px;}
+  h1 small{display:block; font-size:16.5px; font-weight:400; color:var(--ink-2); margin-top:6px;}
+  .card{
+    background:var(--surface-1); border:1px solid var(--border);
+    border-radius:14px; padding:20px 22px; margin-bottom:18px;
+  }
+  .stepnum{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%;
+    background:var(--ink-1); color:var(--surface-1);
+    font-size:15.5px; font-weight:700; margin-right:10px; flex:none;
+  }
+  .card h2{font-size:20px; display:flex; align-items:center; margin-bottom:6px;}
+  .lede{color:var(--ink-2); font-size:16px; margin-bottom:14px;}
+  .note{font-size:14.5px; color:var(--muted); margin-top:10px;}
+  label{font-size:15px; color:var(--ink-2); display:block; margin-bottom:4px;}
+  input[type=text], input[type=number], textarea{
+    width:100%; font:inherit; font-size:16px; color:var(--ink-1);
+    background:var(--page); border:1px solid var(--border); border-radius:8px;
+    padding:8px 10px;
+  }
+  textarea{resize:vertical; min-height:52px;}
+  .row{display:flex; gap:14px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:220px;}
+  button{
+    font:inherit; font-weight:600; font-size:16px; cursor:pointer;
+    border:1px solid var(--border); border-radius:9px;
+    background:var(--surface-1); color:var(--ink-1); padding:8px 16px;
+  }
+  button:hover{filter:brightness(0.96);}
+  button:disabled{opacity:.45; cursor:default;}
+  button.primary{background:var(--ink-1); color:var(--surface-1); border-color:var(--ink-1);}
+
+  /* player tabs */
+  .tabs{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .tab{
+    display:flex; align-items:center; gap:8px; padding:7px 14px;
+    border-radius:999px; border:1.5px solid var(--border);
+    background:var(--surface-1); cursor:pointer; font-weight:600; font-size:15.5px;
+  }
+  .tab .dot{width:10px;height:10px;border-radius:50%;}
+  .tab.active{border-color:var(--ink-1);}
+  .tab input{border:none; background:transparent; font:inherit; font-weight:600; width:90px; color:var(--ink-1); padding:0;}
+  .tab input:focus{outline:1px dashed var(--muted);}
+
+  /* tester */
+  #pad{
+    height:210px; border-radius:12px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px;
+    font-size:24px; font-weight:700; user-select:none; cursor:pointer;
+    background:var(--page); border:1.5px dashed var(--axis);
+    transition:background .1s;
+  }
+  #pad .sub{font-size:15.5px; font-weight:400; color:var(--ink-2);}
+  #pad.wait{background:var(--stop); color:#fff; border-style:solid;}
+  #pad.wait .sub{color:rgba(255,255,255,.85);}
+  #pad.go{background:var(--go); color:#fff; border-style:solid;}
+  #pad.go .sub{color:rgba(255,255,255,.85);}
+  .meta{display:flex; gap:18px; align-items:center; margin-top:12px; flex-wrap:wrap; font-size:15.5px;}
+  .meta b{font-size:17px;}
+  .trials{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    font-size:14.5px; font-variant-numeric:tabular-nums; padding:3px 9px;
+    border-radius:999px; border:1px solid var(--border); color:var(--ink-2);
+  }
+  .chip.flag{border-style:dashed; text-decoration:line-through; opacity:.8;}
+
+  /* plot */
+  #plotwrap{position:relative;}
+  svg text{font-family:inherit;}
+  #tip{
+    position:absolute; pointer-events:none; display:none;
+    background:var(--ink-1); color:var(--surface-1);
+    font-size:13.5px; padding:4px 9px; border-radius:7px; white-space:nowrap;
+    transform:translate(-50%,-130%);
+  }
+  .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;}
+  .controls label{display:flex; align-items:center; gap:6px; margin:0; font-size:15px;}
+  .stat-grid{display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;}
+  .stat{
+    border:1px solid var(--border); border-radius:10px; padding:10px 14px; min-width:150px;
+  }
+  .stat .who{font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:6px;}
+  .stat .who .dot{width:9px;height:9px;border-radius:50%;}
+  .stat .vals{font-size:15px; color:var(--ink-2); margin-top:4px; font-variant-numeric:tabular-nums;}
+  .stat .vals b{color:var(--ink-1);}
+
+  details{margin-top:10px; border:1px solid var(--border); border-radius:10px; padding:10px 14px;}
+  details summary{cursor:pointer; font-weight:600; font-size:15.5px;}
+  details[open]{padding-bottom:14px;}
+  details .inner{margin-top:10px; font-size:15.5px; color:var(--ink-2);}
+  details .inner p{margin-bottom:8px;}
+  .prob{margin-top:14px; padding-top:14px; border-top:1px solid var(--grid);}
+  .prob h3{font-size:16.5px; margin-bottom:6px;}
+  .prob p{font-size:15.5px; color:var(--ink-2); margin-bottom:6px;}
+  code{background:var(--page); border:1px solid var(--border); border-radius:5px; padding:1px 5px; font-size:14.5px;}
+  pre{
+    background:var(--page); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:14.5px; line-height:1.55; overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    white-space:pre-wrap;
+  }
+  .flow{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;}
+  .flow span{
+    font-size:14.5px; font-weight:600; padding:4px 11px; border-radius:999px;
+    border:1px solid var(--border); color:var(--ink-2);
+  }
+  .flow em{color:var(--muted); font-style:normal; align-self:center;}
+  .tools{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:12px 0;}
+  .tool{border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .tool h3{font-size:16px; margin-bottom:6px;}
+  .tool p{font-size:15px; color:var(--ink-2);}
+  .formula{
+    font-size:16.5px; margin:8px 0; padding:6px 10px; border-radius:8px;
+    background:var(--page); border:1px solid var(--border); display:inline-block;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  #pyCode{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:14.5px; line-height:1.55; min-height:265px; white-space:pre;
+  }
+  .cel textarea{margin-bottom:10px;}
+  .footer{font-size:13.5px; color:var(--muted); text-align:center; margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">Data Literacy Lab · Week 1 of 12</div>
+  <h1>Can One Average Describe Your Reaction Speed?
+    <small>Today you are the data. Two players, 8 quick trials each, one big question.</small>
+  </h1>
+</header>
+
+<!-- MISSION -->
+<div class="card">
+  <h2><span class="stepnum">★</span>Today — what we're doing, and why</h2>
+  <p class="lede"><b>What:</b> You will <em>become data</em>. Eight clicks will turn your reflexes into eight numbers — then the real problem: how do you honestly squeeze 8 numbers into one or two, so you can compare people and win an argument with evidence?</p>
+  <p class="lede"><b>Why:</b> game ranks, test scores, medical claims, AI answers — almost everything the world tells you is a <em>summary</em> of many numbers, and someone chose that summary. Today: the two most-used summaries on Earth (mean, median), how a computer computes them, and when each one lies.</p>
+  <div class="flow">
+    <span>Predict</span><em>→</em><span>Measure</span><em>→</em><span>Learn the tools</span><em>→</em><span>Look &amp; compare</span><em>→</em><span>Decide</span><em>→</em><span>Conclude</span>
+  </div>
+</div>
+
+<!-- STEP 0 -->
+<div class="card">
+  <h2><span class="stepnum">0</span>Predict first — lock it in</h2>
+  <p class="lede">Scientists write predictions <em>before</em> measuring. So do we. (An F1 driver reacts to the start lights in about 200 ms.)</p>
+  <div class="row">
+    <div>
+      <label>My typical reaction time will be about … (ms)</label>
+      <input type="number" id="guessMs" placeholder="e.g. 300">
+    </div>
+    <div>
+      <label>Can ONE number honestly describe how fast a person reacts?</label>
+      <input type="text" id="guessOne" placeholder="yes / no — and why, in a few words">
+    </div>
+  </div>
+</div>
+
+<!-- STEP 1 -->
+<div class="card">
+  <h2><span class="stepnum">1</span>Measure — 8 trials each</h2>
+  <p class="lede">Click the pad, wait for <b>green</b>, then click as fast as you can. Both players use this same computer and mouse — same instrument, fair fight. <b>No deleting trials.</b> If something went wrong (sneeze, shout), press <em>Flag</em> — the trial stays, marked.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="pad"><div id="padMain">Click to start trial 1</div><div class="sub" id="padSub">wait for green, then click fast</div></div>
+  <div class="meta">
+    <span>Trials: <b id="mTrials">0</b>/8</span>
+    <span>Last: <b id="mLast">—</b></span>
+    <span>False starts: <b id="mFalse">0</b></span>
+    <button id="btnFlag">⚑ Flag last trial</button>
+  </div>
+  <div class="trials" id="trialChips"></div>
+  <details>
+  <summary>Remote session? Enter a player's times by hand</summary>
+  <div class="inner">
+    <p>On a video call, each on your own computer? Then <b>each player measures on their OWN machine</b> — never by remote-controlling the other's screen: network delay would be added to every click and poison the data. One of you hosts this page on the call; the other runs their 8 trials on their own copy, then reads out (or pastes) the times here.</p>
+    <label>Times in ms for the <b>selected player tab</b> above (comma-separated)</label>
+    <div class="tryrow">
+      <input type="text" id="manualIn" placeholder="231, 254, 249, 262, 244, 251, 240, 258">
+      <button id="btnManual">Apply</button>
+    </div>
+    <p class="note">Tip: the other computer's <em>Copy session summary</em> button has the numbers ready to paste. Two computers = two different instruments — that belongs in your Limitation sentence!</p>
+  </div>
+  </details>
+</div>
+
+<!-- STEP 2: CONCEPTS -->
+<div class="card">
+  <h2><span class="stepnum">2</span>The tools — mean, median, middle-50%</h2>
+  <p class="lede">Three ways to compress many numbers into few. Read these together — in a minute you'll run them on your own data.</p>
+  <div class="tools">
+    <div class="tool">
+      <h3>Mean (average)</h3>
+      <div class="formula">x̄ = (x₁ + x₂ + … + xₙ) / n</div>
+      <p>Add every value, divide by the count. It is the <b>balance point</b> of the dots — so every value pulls on it, including a wild one.</p>
+    </div>
+    <div class="tool">
+      <h3>Median</h3>
+      <div class="formula">sort → take the middle</div>
+      <p><b>Sort</b> the numbers; take the middle one (odd n), or the average of the two middle ones (even n). Only <b>position</b> matters — a wild value can barely move it.</p>
+    </div>
+    <div class="tool">
+      <h3>Middle-50% width</h3>
+      <div class="formula">sort → drop top &amp; bottom 25% → width</div>
+      <p>How tightly the "typical" half of your trials bunch together. Small width = <b>consistent</b>. Pictured below.</p>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-bottom:6px"><b>Mean vs median</b> — five numbers: 3, 5, 6, 9, 27</p>
+  <svg width="100%" height="104" viewBox="0 0 760 104">
+    <line x1="30" x2="730" y1="62" y2="62" stroke="var(--axis)" stroke-width="1"/>
+    <g font-size="12.5" fill="var(--muted)" text-anchor="middle">
+      <text x="30"  y="80">0</text><text x="146" y="80">5</text><text x="263" y="80">10</text>
+      <text x="380" y="80">15</text><text x="496" y="80">20</text><text x="613" y="80">25</text><text x="730" y="80">30</text>
+    </g>
+    <circle cx="100" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="146" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="170" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="240" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="660" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <line x1="170" x2="170" y1="30" y2="54" stroke="var(--p1)" stroke-width="2"/>
+    <text x="170" y="22" font-size="13.5" font-weight="700" fill="var(--p1)" text-anchor="middle">median = 6</text>
+    <path d="M 263 44 L 256 54 L 270 54 Z" fill="var(--p2)"/>
+    <text x="266" y="38" font-size="13.5" font-weight="700" fill="var(--p2)" text-anchor="middle">mean = 10</text>
+    <text x="660" y="42" font-size="13" fill="var(--ink-2)" text-anchor="middle">the wild one</text>
+  </svg>
+  <p class="note">mean = (3+5+6+9+27)/5 = <b>10</b> — dragged toward 27. median = middle of the sorted list = <b>6</b> — didn't care. One wild value moved the balance point, not the middle position.</p>
+
+  <p class="lede" style="margin:16px 0 6px"><b>Middle-50% width</b> — eight trials, sorted: 218, 224, 231, 236, 241, 249, 262, 305</p>
+  <svg width="100%" height="128" viewBox="0 0 760 128">
+    <rect x="211" y="38" width="105" height="48" rx="5" fill="var(--p1)" opacity="0.14"/>
+    <line x1="30" x2="730" y1="62" y2="62" stroke="var(--axis)" stroke-width="1"/>
+    <g font-size="12.5" fill="var(--muted)" text-anchor="middle">
+      <text x="30" y="80">200</text><text x="146.7" y="80">220</text><text x="263.3" y="80">240</text>
+      <text x="380" y="80">260</text><text x="496.7" y="80">280</text><text x="613.3" y="80">300</text><text x="730" y="80">320</text>
+    </g>
+    <!-- dropped low 2 -->
+    <circle cx="135" cy="62" r="6" fill="none" stroke="var(--muted)" stroke-width="2"/>
+    <circle cx="170" cy="62" r="6" fill="none" stroke="var(--muted)" stroke-width="2"/>
+    <text x="135" y="44" font-size="13.5" fill="var(--muted)" text-anchor="middle">✕</text>
+    <text x="170" y="44" font-size="13.5" fill="var(--muted)" text-anchor="middle">✕</text>
+    <!-- middle 4 -->
+    <circle cx="211" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="240" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="269" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <circle cx="316" cy="62" r="6" fill="var(--p1)" stroke="var(--surface-1)" stroke-width="1.5"/>
+    <!-- dropped high 2 -->
+    <circle cx="392" cy="62" r="6" fill="none" stroke="var(--muted)" stroke-width="2"/>
+    <circle cx="642" cy="62" r="6" fill="none" stroke="var(--muted)" stroke-width="2"/>
+    <text x="392" y="44" font-size="13.5" fill="var(--muted)" text-anchor="middle">✕</text>
+    <text x="642" y="44" font-size="13.5" fill="var(--muted)" text-anchor="middle">✕</text>
+    <!-- width arrow -->
+    <line x1="211" x2="316" y1="100" y2="100" stroke="var(--p1)" stroke-width="2"/>
+    <line x1="211" x2="211" y1="94" y2="106" stroke="var(--p1)" stroke-width="2"/>
+    <line x1="316" x2="316" y1="94" y2="106" stroke="var(--p1)" stroke-width="2"/>
+    <text x="263" y="120" font-size="13.5" font-weight="700" fill="var(--p1)" text-anchor="middle">width = 249 − 231 = 18 ms</text>
+    <text x="500" y="112" font-size="13" fill="var(--ink-2)">✕ = dropped: 2 fastest + 2 slowest</text>
+  </svg>
+  <p class="note">Sort your 8 trials, cross out the 2 fastest and the 2 slowest (the lucky and unlucky extremes), and measure the width of the 4 that remain. That width is your <b>consistency score</b> — smaller = steadier. The plot in Step 3 draws this band automatically when you press Reveal.</p>
+
+  <details>
+  <summary>Run the real program — Python, live</summary>
+  <div class="inner">
+  <p class="lede" style="margin-top:4px">Below is a <b>complete Python program</b> — the same recipe as above, for real. Read it line by line, press Run. Then <b>edit it</b>: replace <code>data</code> with YOUR eight trials and run again. Try to break it, too — reading error messages is a real skill.</p>
+  <textarea id="pyCode" spellcheck="false">data = [231, 244, 219, 238, 226, 402, 235]   # &lt;-- put YOUR trials here
+
+def mean(xs):
+    return sum(xs) / len(xs)              # add all, divide by count
+
+def median(xs):
+    s = sorted(xs)                        # step 1: sort
+    m = len(s) // 2                       # step 2: middle index
+    if len(s) % 2 == 1:                   # odd count -> the middle one
+        return s[m]
+    return (s[m-1] + s[m]) / 2            # even count -> average the two middles
+
+print("data   :", data)
+print("sorted :", sorted(data))
+print("mean   :", round(mean(data), 1))
+print("median :", median(data))</textarea>
+  <div class="controls" style="margin-top:8px">
+    <button class="primary" id="btnPy">▶ Run Python</button>
+    <span class="note" id="pyStatus">first run needs internet (~10 s to load Python)</span>
+  </div>
+  <pre id="pyOut">output will appear here</pre>
+  <p class="note">This page also scores you with the same algorithm in JavaScript (View Page Source → <code>function median</code>). One recipe, two languages.</p>
+  </div>
+  </details>
+</div>
+
+<!-- STEP 3 -->
+<div class="card">
+  <h2><span class="stepnum">3</span>Look before you compute</h2>
+  <p class="lede">Every dot is one trial. Same scale for both players — that is the honest way to compare. Talk first: where is each player's "pack"? Any dot far away from its pack (an <b>outlier</b>)? Who looks <em>faster</em>? Who looks <em>more consistent</em>? (Ignore the dashed 280 ms line for now — it belongs to Step 4's game.)</p>
+  <div id="plotwrap">
+    <svg id="plot" width="100%" height="300"></svg>
+    <div id="tip"></div>
+  </div>
+  <div class="controls">
+    <button class="primary" id="btnReveal">Reveal the numbers</button>
+    <label><input type="checkbox" id="cbFlag"> exclude flagged trials</label>
+    <span class="note" id="revealHint">Before revealing: say your guess for your own median out loud.</span>
+  </div>
+  <div class="stat-grid" id="stats"></div>
+  <p class="note" id="surpriseNote" style="display:none">Now toggle <em>exclude flagged trials</em> on and off. Watch which number jumps and which barely moves. Why? That difference is the whole story of <b>mean vs median</b>.</p>
+</div>
+
+<!-- STEP 4 -->
+<div class="card">
+  <h2><span class="stepnum">4</span>The showdown</h2>
+  <p class="lede">A tournament has one rule: react <b>under 280 ms in every round</b>. One slow round and you're out — your other rounds don't matter.</p>
+  <p class="lede">Look at the plot (the dashed line marks 280 ms). Whom do you enter — the player with the better average, or the more consistent one? <b>Argue from the dots, not from pride.</b></p>
+  <p class="note"><b>Why 280 ms?</b> No magic — we chose it: a bit slower than a typical adult click (~250 ms), so most trials beat it but not all. The world is full of chosen cutoffs like this — passing grades, speed limits, medical test thresholds. Someone picks the line; data decides who crosses it.</p>
+</div>
+
+<!-- STEP 5 -->
+<div class="card cel">
+  <h2><span class="stepnum">5</span>Claim — Evidence — Limitation</h2>
+  <p class="lede"><b>Why this step?</b> Making a chart is easy; the rare skill is saying what the data shows <em>and what it can't show</em>. This is how scientists end every analysis — and how you'll end every week of this program. By week 12 it will be automatic.</p>
+  <p class="lede">Three sentences. Say them out loud, then write them (here or in your notebook).</p>
+  <label>Claim — one thing you learned about your reaction speed</label>
+  <textarea id="celClaim" placeholder="My typical reaction time is about …"></textarea>
+  <label>Evidence — which numbers or dots support it?</label>
+  <textarea id="celEvidence" placeholder="My median over 8 trials was … and 6 of 8 trials fell between … and …"></textarea>
+  <label>Limitation — one reason it might not hold in general</label>
+  <textarea id="celLimit" placeholder="All trials used the same hand, at one time of day, so …"></textarea>
+  <div class="controls">
+    <button id="btnCopy">Copy session summary</button>
+    <span class="note">This page does not save anything — copy or screenshot before closing.</span>
+  </div>
+</div>
+
+<!-- PROBLEMS -->
+<div class="card">
+  <h2><span class="stepnum">✎</span>Later this week — two problems (~15 min each)</h2>
+  <p class="lede">Not for today's session. One problem, one day; hints only when stuck, one stage at a time.</p>
+  <details>
+  <summary>Open the two problems</summary>
+
+  <div class="prob">
+    <h3>Problem 1 · New concept — the sneeze</h3>
+    <p>Mia's 7 reaction times (ms): 231, 244, 219, 238, 226, <b>402</b>, 235. The 402 happened when she sneezed.</p>
+    <p>(a) Find the mean and the median of all 7. &nbsp; (b) Remove the 402 and find both again. &nbsp; (c) Which summary moved more — and explain <em>exactly why</em>, using how each one is calculated.</p>
+    <details><summary>Hints</summary><div class="inner">
+      <p>① Sort the numbers first.</p>
+      <p>② The mean uses every value's <em>size</em>; the median only uses the <em>middle position</em>.</p>
+      <p>③ How much can one huge value pull a 7-number sum? How far can it move a middle position?</p>
+    </div></details>
+  </div>
+
+  <div class="prob">
+    <h3>Problem 2 · Judgment — what a mean can hide</h3>
+    <p>(a) After 20 trials, a player's mean is exactly 250 ms. One more trial makes the 21-trial mean 252 ms. Find the 21st time.</p>
+    <p>(b) Two players enter the showdown (out on the first round over 280 ms). <b>On each future round, independently:</b> Player A always records between 240 and 260 ms; Player B records 200 ms with probability ½ and 300 ms with probability ½. Both have mean 250. What is the expected number of rounds B plays, up to and including the round that eliminates him? Whom do you enter — and what does this say about what a mean can hide?</p>
+    <details><summary>Hints</summary><div class="inner">
+      <p>① Mean × count = total. Compare the totals before and after trial 21.</p>
+      <p>② Each round is a coin flip for B: heads = safe 200, tails = 300, out. On average, how many flips until the first tails?</p>
+      <p>③ Can A ever be eliminated at all?</p>
+    </div></details>
+  </div>
+  </details>
+</div>
+
+<div class="footer">Data Literacy Lab · Week 1 · v3.2 · answers live in the parent guide, not here</div>
+</div>
+
+<script>
+"use strict";
+// ---------- state ----------
+const P = [
+  { name:"Player 1", color:cssVar("--p1"), trials:[] },
+  { name:"Player 2", color:cssVar("--p2"), trials:[] },
+];
+let cur = 0;
+let falseStarts = [0,0];
+let padState = "idle";     // idle | armed | go
+let armTimer = null, goAt = 0;
+let revealed = false;
+const MAXT = 8, LIMIT = 280;   // MAXT: trials per player (user decision 2026-08-04; change here to adjust)
+
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+const $ = id => document.getElementById(id);
+
+// ---------- tabs ----------
+function drawTabs(){
+  const t = $("tabs"); t.innerHTML = "";
+  P.forEach((p,i)=>{
+    const el = document.createElement("div");
+    el.className = "tab" + (i===cur ? " active":"");
+    const dot = document.createElement("span");
+    dot.className = "dot"; dot.style.background = p.color;
+    const inp = document.createElement("input");
+    inp.value = p.name;
+    inp.addEventListener("input", e=>{ p.name = e.target.value || ("Player "+(i+1)); draw(); });
+    inp.addEventListener("click", e=> e.stopPropagation());
+    const n = document.createElement("span");
+    n.style.fontSize = "13.5px"; n.style.color = "var(--muted)";
+    n.textContent = p.trials.length + "/" + MAXT;
+    el.append(dot, inp, n);
+    el.addEventListener("click", ()=>{ if(padState!=="idle") resetPad(); cur = i; drawTabs(); drawMeta(); draw(); });
+    t.appendChild(el);
+  });
+}
+
+// ---------- tester ----------
+const pad = $("pad");
+pad.addEventListener("mousedown", onPad);
+function onPad(){
+  const p = P[cur];
+  if (padState === "idle"){
+    if (p.trials.length >= MAXT){ padMsg("Done — "+p.name+" finished "+MAXT+" trials", "switch player above"); return; }
+    padState = "armed";
+    pad.className = "wait";
+    padMsg("Wait for green…", "don't click early");
+    armTimer = setTimeout(()=>{
+      padState = "go"; goAt = performance.now();
+      pad.className = "go";
+      padMsg("CLICK!", "");
+    }, 1500 + Math.random()*2000);
+  } else if (padState === "armed"){
+    clearTimeout(armTimer);
+    falseStarts[cur]++;
+    resetPad("Too soon! That's a false start.", "click to try again");
+  } else if (padState === "go"){
+    const ms = Math.round(performance.now() - goAt);
+    p.trials.push({ms, flag:false});
+    resetPad(p.trials.length >= MAXT ? "Done — nice work!" : "Click to start trial " + (p.trials.length+1),
+             ms + " ms — " + (ms < 250 ? "quick!" : ms < 350 ? "solid" : "wake up 🙂"));
+  }
+  drawMeta(); drawTabs(); draw();
+}
+function resetPad(main, sub){
+  padState = "idle"; pad.className = "";
+  padMsg(main || "Click to start trial " + (P[cur].trials.length+1), sub || "wait for green, then click fast");
+}
+function padMsg(a,b){ $("padMain").textContent = a; $("padSub").textContent = b; }
+
+$("btnFlag").addEventListener("click", ()=>{
+  const t = P[cur].trials;
+  if (t.length){ t[t.length-1].flag = !t[t.length-1].flag; drawMeta(); draw(); }
+});
+
+function drawMeta(){
+  const p = P[cur];
+  $("mTrials").textContent = p.trials.length;
+  $("mLast").textContent = p.trials.length ? p.trials[p.trials.length-1].ms + " ms" : "—";
+  $("mFalse").textContent = falseStarts[cur];
+  const chips = $("trialChips"); chips.innerHTML = "";
+  p.trials.forEach((t,i)=>{
+    const c = document.createElement("span");
+    c.className = "chip" + (t.flag ? " flag":"");
+    c.textContent = t.ms;
+    c.title = "trial " + (i+1) + (t.flag ? " (flagged)":"");
+    chips.appendChild(c);
+  });
+}
+
+// ---------- stats ----------
+function vals(p){
+  const ex = $("cbFlag").checked;
+  return p.trials.filter(t=>!ex || !t.flag).map(t=>t.ms).sort((a,b)=>a-b);
+}
+function median(v){
+  if(!v.length) return null;
+  const m = v.length>>1;
+  return v.length%2 ? v[m] : Math.round((v[m-1]+v[m])/2);
+}
+function mean(v){ return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
+function mid50(v){           // drop 25% from each end, width of the rest
+  if (v.length < 8) return null;
+  const k = Math.floor(v.length/4);
+  const mid = v.slice(k, v.length-k);
+  return {lo: mid[0], hi: mid[mid.length-1], w: mid[mid.length-1]-mid[0]};
+}
+
+// ---------- plot ----------
+const svg = $("plot"), tip = $("tip");
+function draw(){
+  const W = svg.clientWidth || 800, H = 300;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.innerHTML = "";
+  const ML = 14, MR = 14, MT = 8, MB = 34;
+  const all = P.flatMap(p=>p.trials.map(t=>t.ms));
+  let lo = Math.min(150, ...(all.length?all:[150]));
+  let hi = Math.max(400, LIMIT+40, ...(all.length?all:[400]));
+  lo = Math.floor((lo-15)/50)*50; hi = Math.ceil((hi+15)/50)*50;
+  const x = ms => ML + (ms-lo)/(hi-lo)*(W-ML-MR);
+  const bandH = (H-MT-MB)/2;
+
+  // gridlines + ticks
+  for(let ms=lo; ms<=hi; ms+=50){
+    add("line",{x1:x(ms),x2:x(ms),y1:MT,y2:H-MB,stroke:"var(--grid)","stroke-width":1});
+    add("text",{x:x(ms),y:H-MB+18,fill:"var(--muted)","font-size":13.5,"text-anchor":"middle"}, ms);
+  }
+  add("text",{x:W-MR,y:H-6,fill:"var(--muted)","font-size":13.5,"text-anchor":"end"},"reaction time (ms)");
+  add("line",{x1:ML,x2:W-MR,y1:H-MB,y2:H-MB,stroke:"var(--axis)","stroke-width":1});
+
+  // 280 ms rule line
+  add("line",{x1:x(LIMIT),x2:x(LIMIT),y1:MT,y2:H-MB,stroke:"var(--ink-2)","stroke-width":1.5,"stroke-dasharray":"5 4"});
+  add("text",{x:x(LIMIT)+5,y:MT+13,fill:"var(--ink-2)","font-size":13.5,"font-weight":600},"280 ms — Step 4's rule");
+
+  P.forEach((p,pi)=>{
+    const yBase = MT + bandH*pi + bandH - 22;
+    // direct label (legend)
+    add("circle",{cx:ML+6,cy:MT+bandH*pi+16,r:5,fill:p.color});
+    add("text",{x:ML+17,y:MT+bandH*pi+20,fill:"var(--ink-1)","font-size":14.5,"font-weight":600}, p.name);
+
+    // reveal band + median
+    if (revealed){
+      const v = vals(p), m = median(v), b = mid50(v);
+      if (b){
+        add("rect",{x:x(b.lo),y:MT+bandH*pi+28,width:Math.max(2,x(b.hi)-x(b.lo)),height:bandH-52,
+                    fill:p.color,opacity:.13,rx:4});
+      }
+      if (m !== null){
+        add("line",{x1:x(m),x2:x(m),y1:MT+bandH*pi+24,y2:yBase+12,stroke:p.color,"stroke-width":2});
+        add("text",{x:x(m),y:MT+bandH*pi+40,fill:p.color,"font-size":13.5,"font-weight":700,"text-anchor":"middle"},"median "+m);
+      }
+    }
+
+    // stacked dots (bin 6 ms)
+    const bins = {};
+    p.trials.forEach((t,ti)=>{
+      const b = Math.round(t.ms/6);
+      bins[b] = (bins[b]||0)+1;
+      const cy = yBase - (bins[b]-1)*13;
+      const g = add("g",{});
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      setA(c,{cx:x(t.ms),cy,r:5.5,fill:t.flag?"none":p.color,
+              stroke:t.flag?p.color:"var(--surface-1)","stroke-width":t.flag?2:1.5});
+      const hit = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      setA(hit,{cx:x(t.ms),cy,r:11,fill:"transparent"});
+      hit.addEventListener("mousemove", e=>{
+        tip.style.display="block";
+        const r = svg.getBoundingClientRect();
+        tip.style.left = (e.clientX-r.left)+"px"; tip.style.top = (e.clientY-r.top)+"px";
+        tip.textContent = p.name+" · trial "+(ti+1)+" · "+t.ms+" ms"+(t.flag?" ⚑":"");
+      });
+      hit.addEventListener("mouseleave", ()=> tip.style.display="none");
+      g.append(c,hit); svg.appendChild(g);
+    });
+  });
+
+  drawStats();
+
+  function add(tag,attrs,txt){
+    const el = document.createElementNS("http://www.w3.org/2000/svg",tag);
+    setA(el,attrs); if(txt!==undefined) el.textContent = txt;
+    svg.appendChild(el); return el;
+  }
+  function setA(el,attrs){ for(const k in attrs) el.setAttribute(k,attrs[k]); }
+}
+
+function drawStats(){
+  const box = $("stats"); box.innerHTML = "";
+  if (!revealed) return;
+  P.forEach(p=>{
+    const v = vals(p);
+    if (!v.length) return;
+    const b = mid50(v);
+    const over = v.filter(ms=>ms>LIMIT).length;
+    const el = document.createElement("div");
+    el.className = "stat";
+    el.innerHTML =
+      '<div class="who"><span class="dot" style="background:'+p.color+'"></span>'+p.name+'</div>'+
+      '<div class="vals">median <b>'+median(v)+'</b> · mean <b>'+mean(v)+'</b>'+
+      (b ? '<br>middle-50% width <b>'+b.w+'</b> ms' : '')+
+      '<br>trials over 280: <b>'+over+'</b> of '+v.length+'</div>';
+    box.appendChild(el);
+  });
+}
+
+$("btnReveal").addEventListener("click", ()=>{
+  revealed = true;
+  $("revealHint").style.display = "none";
+  $("surpriseNote").style.display = "block";
+  draw();
+});
+$("cbFlag").addEventListener("change", draw);
+
+// ---------- copy summary ----------
+$("btnCopy").addEventListener("click", ()=>{
+  let s = "Data Literacy Lab - Week 1 session summary\n";
+  s += "Prediction: typical ms = " + ($("guessMs").value||"—") + " | one number enough? " + ($("guessOne").value||"—") + "\n\n";
+  P.forEach((p,i)=>{
+    const raw = p.trials.map(t=>t.ms+(t.flag?"*":"")).join(", ");
+    const v = vals(p); const b = mid50(v);
+    s += p.name + " (" + p.trials.length + " trials, " + falseStarts[i] + " false starts)\n";
+    s += "  trials: " + (raw||"—") + "\n";
+    if (v.length) s += "  median " + median(v) + " | mean " + mean(v) +
+      (b? " | middle-50% width " + b.w : "") + " | over-280: " + v.filter(m=>m>LIMIT).length + "\n";
+  });
+  s += "\nClaim: " + $("celClaim").value + "\nEvidence: " + $("celEvidence").value + "\nLimitation: " + $("celLimit").value + "\n";
+  navigator.clipboard.writeText(s).then(()=>{
+    $("btnCopy").textContent = "Copied ✓";
+    setTimeout(()=> $("btnCopy").textContent = "Copy session summary", 1500);
+  });
+});
+
+// ---------- run real Python (Pyodide, lazy-loaded) ----------
+let pyPromise = null;
+function loadPy(){
+  if (pyPromise) return pyPromise;
+  const sources = [
+    "https://cdnjs.cloudflare.com/ajax/libs/pyodide/0.26.1/pyodide.js",
+    "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"
+  ];
+  pyPromise = (async ()=>{
+    let lastErr = null;
+    for (const src of sources){
+      try{
+        await new Promise((res, rej)=>{
+          const sc = document.createElement("script");
+          sc.src = src;
+          sc.onload = res;
+          sc.onerror = ()=> rej(new Error("script load failed"));
+          document.head.appendChild(sc);
+        });
+        const indexURL = src.substring(0, src.lastIndexOf("/") + 1);
+        return await loadPyodide({ indexURL });
+      }catch(e){ lastErr = e; }
+    }
+    pyPromise = null;
+    throw lastErr || new Error("no source reachable");
+  })();
+  return pyPromise;
+}
+$("btnPy").addEventListener("click", async ()=>{
+  const st = $("pyStatus"), out = $("pyOut");
+  st.textContent = "loading Python…";
+  let py;
+  try{ py = await loadPy(); }
+  catch(e){
+    st.textContent = "";
+    out.textContent = "Could not load Python (internet is needed on the first run).\nYou can still read the code - and this page's own JavaScript runs the same algorithm in Step 3.";
+    return;
+  }
+  st.textContent = "running…";
+  const buf = [];
+  py.setStdout({ batched: t => buf.push(t) });
+  py.setStderr({ batched: t => buf.push(t) });
+  try{ await py.runPythonAsync($("pyCode").value); }
+  catch(e){ buf.push(String(e.message || e)); }
+  out.textContent = buf.join("\n") || "(no output - add print statements!)";
+  st.textContent = "done - edit the code and run again";
+});
+
+// ---------- manual entry (remote sessions) ----------
+$("btnManual").addEventListener("click", ()=>{
+  const xs = $("manualIn").value.split(/[\s,]+/).map(Number)
+    .filter(n => !isNaN(n) && n > 50 && n < 2000);
+  if (!xs.length){ $("manualIn").placeholder = "numbers in ms, e.g. 231, 254, 249"; return; }
+  P[cur].trials = xs.slice(0, MAXT).map(ms => ({ms: Math.round(ms), flag:false}));
+  $("manualIn").value = "";
+  drawMeta(); drawTabs(); draw();
+});
+
+window.addEventListener("resize", draw);
+drawTabs(); drawMeta(); draw();
+</script>
+</body>
+</html>
