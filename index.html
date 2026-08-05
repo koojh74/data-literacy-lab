@@ -5,46 +5,139 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Data Literacy Lab</title>
 <style>
-  :root{color-scheme:light; --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
-        --muted:#898781; --border:rgba(11,11,11,.1); --p1:#2a78d6;}
-  @media (prefers-color-scheme: dark){
-    :root{color-scheme:dark; --surface:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink2:#c3c2b7;
-          --border:rgba(255,255,255,.1); --p1:#3987e5;}
+  :root{
+    color-scheme: light;
+    --surface-1:#f6f6f3; --page:#e9e9e5;
+    --ink-1:#33354a; --ink-2:#5c5e70; --muted:#8b8d99;
+    --axis:#b6b6ab; --border:rgba(51,53,74,0.15);
+    --accent:#35de87; --accent-ink:#123a24;
+    --dot:rgba(51,53,74,0.14);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);
-       color:var(--ink);line-height:1.55;padding:48px 18px;}
-  .wrap{max-width:640px;margin:0 auto;}
-  .kicker{font-size:14.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;}
-  h1{font-size:32px;margin:8px 0 10px;}
-  p.sub{color:var(--ink2);font-size:17px;margin-bottom:30px;}
-  a.week{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);
-         border-radius:14px;padding:18px 20px;margin-bottom:14px;text-decoration:none;color:var(--ink);}
-  a.week:hover{border-color:var(--p1);}
-  .num{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--surface);
-       display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:none;}
-  .t{font-weight:700;font-size:18px;}
-  .d{color:var(--ink2);font-size:15px;}
-  .soon{opacity:.5;pointer-events:none;}
-  .foot{color:var(--muted);font-size:14px;margin-top:34px;}
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme: dark;
+      --surface-1:#1b1e24; --page:#121419;
+      --ink-1:#eceef2; --ink-2:#b4b7c2; --muted:#83879a;
+      --axis:#3d424e; --border:rgba(236,238,242,0.14);
+      --accent:#35de87; --accent-ink:#0c2b19;
+      --dot:rgba(236,238,242,0.11);
+    }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--page); color:var(--ink-1); line-height:1.55;
+    background-image:radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size:26px 26px; background-position:13px 13px;
+    padding:64px 20px 80px; min-height:100vh;
+  }
+  body::before{
+    content:""; position:fixed; inset:0 0 auto 0; height:3px;
+    background:var(--accent); z-index:20;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+
+  .kicker{
+    font-family:var(--mono); font-size:13px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  h1{
+    font-size:clamp(44px, 9vw, 76px); line-height:.98; letter-spacing:-.035em;
+    font-weight:800; margin:14px 0 18px;
+  }
+  h1 .dot{color:var(--accent);}
+  p.sub{color:var(--ink-2); font-size:18px; max-width:46ch; margin-bottom:44px;}
+
+  .rule{
+    display:flex; align-items:center; gap:12px; margin-bottom:16px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .rule::after{content:""; flex:1; height:1px; background:var(--axis); opacity:.6;}
+
+  a.week{
+    position:relative; display:flex; align-items:center; gap:18px;
+    background:var(--surface-1); border:1px solid var(--border);
+    padding:20px 22px; margin-bottom:14px; text-decoration:none; color:var(--ink-1);
+    clip-path:polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    transition:border-color .15s, transform .15s;
+  }
+  /* registration marks sit inside the card: clip-path would eat them outside */
+  a.week::before, a.week::after{
+    content:""; position:absolute; width:9px; height:9px; pointer-events:none;
+    background:
+      linear-gradient(var(--axis),var(--axis)) center/100% 1px no-repeat,
+      linear-gradient(var(--axis),var(--axis)) center/1px 100% no-repeat;
+  }
+  a.week::before{right:8px; top:8px;}
+  a.week::after{left:8px; bottom:8px;}
+  a.week:hover{border-color:var(--accent); transform:translateX(2px);}
+
+  .num{
+    font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:.04em;
+    width:40px; height:40px; flex:none; display:flex;
+    align-items:center; justify-content:center;
+    background:var(--ink-1); color:var(--page);
+  }
+  .body{flex:1; min-width:0;}
+  .t{display:block; font-weight:700; font-size:18px; letter-spacing:-.012em;}
+  .d{display:block; color:var(--ink-2); font-size:15px;}
+  .go{
+    font-family:var(--mono); font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); flex:none;
+  }
+  a.week:hover .go{color:var(--accent);}
+
+  a.week.soon{opacity:.55; pointer-events:none;}
+  a.week.soon .num{background:transparent; color:var(--muted); border:1px dashed var(--axis);}
+
+  .foot{
+    margin-top:44px; padding-top:16px; border-top:1px solid var(--border);
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted);
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .foot .live{display:flex; align-items:center; gap:7px;}
+  .foot .live::before{
+    content:""; width:7px; height:7px; border-radius:50%; background:var(--accent);
+  }
+  @media (max-width:520px){
+    body{padding:48px 16px 60px;}
+    .go{display:none;}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="kicker">Family Data Literacy Lab</div>
-  <h1>Weekly Labs</h1>
-  <p class="sub">One real-world question a week. Statistics, math, physics, and code — with your own data.</p>
+  <h1>Weekly Labs<span class="dot">.</span></h1>
+  <p class="sub">One real-world question a week. Statistics, math, physics, and code — measured with your own data, not a textbook's.</p>
+
+  <div class="rule">12-week pilot</div>
+
   <a class="week" href="week1/">
-    <span class="num">1</span>
-    <span><span class="t">Reaction Lab</span><br>
-    <span class="d">Can one average describe your reaction speed?</span></span>
+    <span class="num">01</span>
+    <span class="body">
+      <span class="t">Reaction Lab</span>
+      <span class="d">Can one average describe your reaction speed?</span>
+    </span>
+    <span class="go">Open →</span>
   </a>
+
   <a class="week soon" href="#">
-    <span class="num">2</span>
-    <span><span class="t">Can We See Music?</span><br>
-    <span class="d">Coming soon — waveforms, periods, and f = 1/T</span></span>
+    <span class="num">02</span>
+    <span class="body">
+      <span class="t">Can We See Music?</span>
+      <span class="d">Waveforms, periods, and f = 1/T</span>
+    </span>
+    <span class="go">Soon</span>
   </a>
-  <div class="foot">Made with Dad · new lab every week</div>
+
+  <div class="foot">
+    <span class="live">New lab every week</span>
+    <span>Made with Dad</span>
+  </div>
 </div>
 </body>
 </html>
