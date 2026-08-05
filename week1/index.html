@@ -202,6 +202,7 @@
     <span>Last: <b id="mLast">—</b></span>
     <span>False starts: <b id="mFalse">0</b></span>
     <button id="btnFlag">⚑ Flag last trial</button>
+    <button id="btnReset" title="Clears the session saved in this browser and starts over">↺ Start over</button>
   </div>
   <div class="trials" id="trialChips"></div>
   <details>
@@ -360,8 +361,10 @@ print("median :", median(data))</textarea>
   <textarea id="celLimit" placeholder="All trials used the same hand, at one time of day, so …"></textarea>
   <div class="controls">
     <button id="btnCopy">Copy session summary</button>
-    <span class="note">This page does not save anything — copy or screenshot before closing.</span>
+    <button id="btnDownload">⬇ Download JSON</button>
+    <button id="btnSheet">Save to our sheet</button>
   </div>
+  <p class="note" id="saveNote">Your work is saved in this browser as you go — closing the tab won't lose it.</p>
 </div>
 
 <!-- PROBLEMS -->
@@ -395,17 +398,30 @@ print("median :", median(data))</textarea>
   </details>
 </div>
 
-<div class="footer">Data Literacy Lab · Week 1 · v3.2 · answers live in the parent guide, not here</div>
+<div class="footer">Data Literacy Lab · Week 1 · v3.3 · answers live in the parent guide, not here</div>
 </div>
 
 <script>
 "use strict";
+// ---------- saving: where records go ----------
+// This page always saves to THIS browser (localStorage). The two settings below are
+// optional: fill sheetUrl in to also post a row to a shared Google Sheet at the end of
+// a session. Leave it "" and everything stays on this computer.
+const CONFIG = {
+  sheetUrl: "",              // Apps Script web app URL (see SHEET-SETUP.md)
+  secret:   "change-me",     // must match SECRET in the Apps Script
+};
+
 // ---------- state ----------
-const P = [
-  { name:"Player 1", color:cssVar("--p1"), trials:[] },
-  // Dad's 8 trials, measured 2026-08-04 (0 false starts) — preloaded so class time goes to Player 1's live run
-  { name:"Dad", color:cssVar("--p2"), trials:[334,386,317,379,288,441,326,354].map(ms => ({ms, flag:false})) },
-];
+// Dad's 8 trials, measured 2026-08-04 (0 false starts) — preloaded so class time goes to Player 1's live run
+const DAD_TRIALS = [334, 386, 317, 379, 288, 441, 326, 354];
+function freshPlayers(){
+  return [
+    { name:"Player 1", color:cssVar("--p1"), trials:[] },
+    { name:"Dad",      color:cssVar("--p2"), trials: DAD_TRIALS.map(ms => ({ms, flag:false})) },
+  ];
+}
+let P = freshPlayers();
 let cur = 0;
 let falseStarts = [0,0];
 let padState = "idle";     // idle | armed | go
@@ -690,8 +706,165 @@ $("btnManual").addEventListener("click", ()=>{
   drawMeta(); drawTabs(); draw();
 });
 
+// ---------- saving (1): this browser ----------
+// Nothing here is required for the lab to work. If localStorage is unavailable
+// (private window, quota, file:// in some browsers) every call quietly no-ops.
+const LS_KEY = "dll.week1.v1";
+const FIELDS = ["guessMs","guessOne","celClaim","celEvidence","celLimit","pyCode"];
+
+function writeLocal(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      v: 1,
+      savedAt: new Date().toISOString(),
+      players: P.map(p => ({ name:p.name, trials:p.trials.map(t=>({ms:t.ms, flag:!!t.flag})) })),
+      falseStarts,
+      fields: Object.fromEntries(FIELDS.map(id => [id, $(id).value])),
+    }));
+  }catch(e){ /* saving is a convenience, never a requirement */ }
+}
+
+// Typing is debounced; anything that changes a trial is written at once, because a
+// measurement is the one thing here that cannot be retyped.
+let saveTimer = null;
+function saveLocal(now){
+  clearTimeout(saveTimer);
+  if (now) writeLocal();
+  else saveTimer = setTimeout(writeLocal, 250);
+}
+addEventListener("pagehide", ()=> saveLocal(true));
+addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") saveLocal(true); });
+
+function restoreLocal(){
+  let raw = null;
+  try{ raw = localStorage.getItem(LS_KEY); }catch(e){ return false; }
+  if (!raw) return false;
+  try{
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.players)) return false;
+    s.players.forEach((sp, i)=>{
+      if (!P[i]) return;
+      if (sp.name) P[i].name = sp.name;
+      if (Array.isArray(sp.trials)) P[i].trials = sp.trials
+        .filter(t => t && typeof t.ms === "number")
+        .map(t => ({ms: t.ms, flag: !!t.flag}));
+    });
+    if (Array.isArray(s.falseStarts)) falseStarts = s.falseStarts.slice(0,2).map(n=>+n||0);
+    if (s.fields) FIELDS.forEach(id => { if (typeof s.fields[id] === "string") $(id).value = s.fields[id]; });
+    return true;
+  }catch(e){ return false; }
+}
+
+// Every state change funnels through draw(), so one wrapper catches them all.
+const drawOnly = draw;
+let lastTrialCount = -1;
+draw = function(){
+  drawOnly.apply(this, arguments);
+  const n = P.reduce((a,p)=> a + p.trials.length, 0);
+  saveLocal(n !== lastTrialCount);      // trial added or removed -> write immediately
+  lastTrialCount = n;
+};
+FIELDS.forEach(id => $(id).addEventListener("input", saveLocal));
+
+// ---------- saving (2): the record itself ----------
+function buildRecord(){
+  const now = new Date();
+  return {
+    lab: "week1-reaction",
+    savedAt: now.toISOString(),
+    prediction: {
+      typicalMs: $("guessMs").value.trim(),
+      oneNumberEnough: $("guessOne").value.trim(),
+    },
+    players: P.map((p, i)=>{
+      const v = p.trials.map(t=>t.ms).sort((a,b)=>a-b);   // all trials, flags kept alongside
+      const b = mid50(v);
+      return {
+        name: p.name,
+        trials: p.trials.map(t=>t.ms),
+        flagged: p.trials.filter(t=>t.flag).map(t=>t.ms),
+        falseStarts: falseStarts[i] || 0,
+        median: median(v),
+        mean: mean(v),
+        mid50Width: b ? b.w : null,
+        over280: v.filter(m=>m>LIMIT).length,
+      };
+    }),
+    cel: {
+      claim: $("celClaim").value.trim(),
+      evidence: $("celEvidence").value.trim(),
+      limitation: $("celLimit").value.trim(),
+    },
+  };
+}
+
+function note(msg){ $("saveNote").textContent = msg; }
+
+$("btnDownload").addEventListener("click", ()=>{
+  const rec = buildRecord();
+  const blob = new Blob([JSON.stringify(rec, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "reaction-lab-week1-" + rec.savedAt.slice(0,10) + ".json";
+  a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 2000);
+  note("Downloaded. Keep it — later weeks can read this file.");
+});
+
+// ---------- saving (3): the shared sheet (best-effort, never blocks the lab) ----------
+$("btnSheet").addEventListener("click", async ()=>{
+  if (!CONFIG.sheetUrl){
+    note("No sheet is set up yet — use Download JSON, or paste a URL into CONFIG at the top of the source.");
+    return;
+  }
+  const btn = $("btnSheet");
+  btn.disabled = true; note("Saving to the sheet…");
+  const body = JSON.stringify({ secret: CONFIG.secret, record: buildRecord() });
+  // text/plain keeps this a "simple" request, so the browser skips the CORS preflight
+  // that Apps Script cannot answer. The script parses the body itself.
+  const opts = { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body };
+  try{
+    const r = await fetch(CONFIG.sheetUrl, opts);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    note("Saved to the sheet ✓");
+  }catch(e){
+    try{
+      // Fallback: fire-and-forget. We can't read the reply, but the row still lands.
+      await fetch(CONFIG.sheetUrl, Object.assign({mode:"no-cors"}, opts));
+      note("Sent to the sheet (reply not readable — check the sheet once).");
+    }catch(e2){
+      note("Could not reach the sheet. Your work is still saved here — use Download JSON.");
+    }
+  }
+  btn.disabled = false;
+});
+
+// ---------- start over ----------
+let resetArmed = false;
+$("btnReset").addEventListener("click", ()=>{
+  const btn = $("btnReset");
+  if (!resetArmed){
+    resetArmed = true;
+    btn.textContent = "Sure? click again";
+    setTimeout(()=>{ resetArmed = false; btn.textContent = "↺ Start over"; }, 4000);
+    return;
+  }
+  resetArmed = false; btn.textContent = "↺ Start over";
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  P = freshPlayers(); cur = 0; falseStarts = [0,0]; revealed = false;
+  FIELDS.forEach(id => { if (id !== "pyCode") $(id).value = ""; });
+  $("revealHint").style.display = "";
+  $("surpriseNote").style.display = "none";
+  resetPad();
+  note("Started over. Dad's trials are back to the recorded set.");
+  drawTabs(); drawMeta(); draw();
+});
+
 window.addEventListener("resize", draw);
+const wasRestored = restoreLocal();
 drawTabs(); drawMeta(); draw();
+if (wasRestored) note("Picked up where this browser left off. ↺ Start over clears it.");
 </script>
 </body>
 </html>
