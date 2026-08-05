@@ -508,8 +508,9 @@ const CONFIG = {
 };
 
 // ---------- state ----------
-// Dad's 8 trials, measured 2026-08-04 (0 false starts) — preloaded so class time goes to Player 1's live run
-const DAD_TRIALS = [334, 386, 317, 379, 288, 441, 326, 354];
+// Dad's 8 trials, measured 2026-08-05 — preloaded so class time goes to Player 1's live run
+const DAD_TRIALS = [268, 251, 269, 378, 278, 354, 296, 288];
+const DAD_FALSE_STARTS = 1;
 function freshPlayers(){
   return [
     { name:"Player 1", color:cssVar("--p1"), trials:[] },
@@ -518,7 +519,7 @@ function freshPlayers(){
 }
 let P = freshPlayers();
 let cur = 0;
-let falseStarts = [0,0];
+let falseStarts = [0, DAD_FALSE_STARTS];
 let padState = "idle";     // idle | armed | go
 let armTimer = null, goAt = 0;
 let revealed = false;
@@ -804,7 +805,9 @@ $("btnManual").addEventListener("click", ()=>{
 // ---------- saving (1): this browser ----------
 // Nothing here is required for the lab to work. If localStorage is unavailable
 // (private window, quota, file:// in some browsers) every call quietly no-ops.
-const LS_KEY = "dll.week1.v1";
+// Bump this whenever the preloaded data changes, so browsers holding an older
+// saved session pick up the new defaults instead of silently restoring stale trials.
+const LS_KEY = "dll.week1.v2";
 const FIELDS = ["guessMs","guessOne","celClaim","celEvidence","celLimit","pyCode"];
 
 function writeLocal(){
@@ -947,7 +950,7 @@ $("btnReset").addEventListener("click", ()=>{
   }
   resetArmed = false; btn.textContent = "↺ Start over";
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
-  P = freshPlayers(); cur = 0; falseStarts = [0,0]; revealed = false;
+  P = freshPlayers(); cur = 0; falseStarts = [0, DAD_FALSE_STARTS]; revealed = false;
   FIELDS.forEach(id => { if (id !== "pyCode") $(id).value = ""; });
   $("revealHint").style.display = "";
   $("surpriseNote").style.display = "none";
