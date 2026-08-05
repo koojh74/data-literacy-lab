@@ -403,7 +403,8 @@ print("median :", median(data))</textarea>
 // ---------- state ----------
 const P = [
   { name:"Player 1", color:cssVar("--p1"), trials:[] },
-  { name:"Player 2", color:cssVar("--p2"), trials:[] },
+  // Dad's 8 trials, measured 2026-08-04 (0 false starts) — preloaded so class time goes to Player 1's live run
+  { name:"Dad", color:cssVar("--p2"), trials:[334,386,317,379,288,441,326,354].map(ms => ({ms, flag:false})) },
 ];
 let cur = 0;
 let falseStarts = [0,0];
